@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pallet_accounting_app
+    volumes:
+      # Монтируем файл базы данных SQLite в контейнер.
+      # Это гарантирует, что данные будут сохраняться между перезапусками контейнера.
+      - ./pallet_accounting.db:/app/pallet_accounting.db
+    # Приложение теперь доступно только внутри Docker-сети, а не снаружи
+    expose:
+      - "8000"
+    networks:
+      - app_network
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: pallet_accounting_nginx
+    ports:
+      - "80:80" # Публикуем HTTP порт
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Учет паллет на СВХ</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-body-tertiary">
+    <main class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <h1 class="h2 mb-0">Паллеты на складе</h1>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/received" class="btn btn-outline-secondary">Посмотреть полученные</a>
+                <a href="/admin" class="btn btn-outline-secondary">Админ-панель</a>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <form action="/" method="get" class="d-flex gap-2 flex-grow-1" style="max-width: 400px;">
+                <input type="search" name="q" class="form-control" placeholder="Поиск по составу..."
+                    value="{{ search_query }}">
+                <button type="submit" class="btn btn-primary">Найти</button>
+            </form>
+            <div class="d-flex align-items-center gap-3">
+                {% if pallets %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="select-all-checkbox">
+                    <label class="form-check-label" for="select-all-checkbox">Выбрать все</label>
+                </div>
+                {% endif %}
+                <form id="print-form" action="/download-pallets-pdf" method="get" target="_blank">
+                    <button type="submit" class="btn btn-success" id="print-selected-btn" disabled>🖨️ Печать</button>
+                </form>
+            </div>
+        </div>
+
+        {% if not pallets %}
+        <div class="text-center text-body-secondary py-5">
+            <h3 class="h4">Паллеты не найдены</h3>
+            <p>На складе нет паллет, соответствующих вашему запросу.</p>
+            {% if search_query %}
+            <a href="/" class="btn btn-primary">Сбросить поиск</a>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            {% for pallet in pallets %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title mb-0">Паллета №{{ pallet.number }}</h5>
+                            <small class="text-body-secondary">Поступление:
+                                {{ pallet.pallets_from_the_date.strftime('%d.%m.%Y') }}</small>
+                        </div>
+                        <input type="checkbox" name="id" value="{{ pallet.id }}" form="print-form"
+                            class="form-check-input pallet-checkbox" style="width: 1.5em; height: 1.5em;">
+                    </div>
+                    <div class="card-body">
+                        {% if pallet.products %}
+                        <ul class="list-group list-group-flush">
+                            {% for product_on_pallet in pallet.products %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                {{ product_on_pallet.product.product_name }}
+                                <span class="badge bg-primary rounded-pill">{{ product_on_pallet.quantity }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-body-secondary fst-italic">(пустая паллета)</p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="/admin/pallets/{{ pallet.id }}/edit" class="btn btn-sm btn-outline-primary">
+                            Редактировать
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectAllCheckbox = document.getElementById('select-all-checkbox');
+            const checkboxes = document.querySelectorAll('.pallet-checkbox');
+            const printBtn = document.getElementById('print-selected-btn');
+
+            function togglePrintButton() {
+                const selectedCount = document.querySelectorAll('.pallet-checkbox:checked').length;
+                printBtn.disabled = selectedCount === 0;
+
+                if (selectAllCheckbox) {
+                    if (selectedCount === checkboxes.length && checkboxes.length > 0) {
+                        selectAllCheckbox.checked = true;
+                        selectAllCheckbox.indeterminate = false;
+                    } else if (selectedCount > 0) {
+                        selectAllCheckbox.checked = false;
+                        selectAllCheckbox.indeterminate = true;
+                    } else {
+                        selectAllCheckbox.checked = false;
+                        selectAllCheckbox.indeterminate = false;
+                    }
+                }
+            }
+
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', togglePrintButton);
+            });
+
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function () {
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                    togglePrintButton();
+                });
+            }
+
+            togglePrintButton(); // Initial check
+        });
+    </script>
+</body>
+
+</html>

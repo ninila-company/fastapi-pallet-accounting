@@ -1,0 +1,35 @@
+# Файлы базы данных
+*.db
+*.sqlite
+*.sqlite3
+
+# Лог-файлы и временные файлы базы данных
+*.db-journal
+*.log
+
+# Кэш Python и скомпилированные файлы
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Директории виртуального окружения
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Файлы IDE и редакторов кода
+.idea/
+.vscode/
+
+# Отчеты о покрытии кода и тестировании
+.coverage
+.coverage.*
+.pytest_cache/
+htmlcov/
+
+# Установочные файлы и дистрибутивы
+dist/
+build/
+*.egg-info/

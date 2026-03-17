@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+aiosqlite
+jinja2
+weasyprint
+python-multipart

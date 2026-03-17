@@ -1,0 +1,85 @@
+/* --- Глобальные переменные для кастомной темной темы --- */
+:root[data-bs-theme="dark"] {
+  --bs-body-color: #adb5bd;
+  --bs-body-bg: #1d232a;
+  --bs-secondary-bg: #2a323c;
+  --bs-tertiary-bg: #242b33;
+  --bs-border-color: #374151;
+  --bs-primary: #38bdf8;
+  --bs-primary-rgb: 56, 189, 248;
+  --bs-primary-text-emphasis: #7dd3fc;
+  --bs-body-color-rgb: 173, 181, 189;
+  --bs-link-color: #7dd3fc;
+  --bs-link-color-rgb: 125, 211, 252;
+  --bs-link-hover-color: #bae6fd;
+  --bs-link-hover-color-rgb: 186, 230, 253;
+}
+
+/* --- Стили для страниц без Bootstrap (если такие останутся) --- */
+body:not(:has(.container-fluid)) {
+  font-family: sans-serif;
+  margin: 2em;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+/* --- Общие стили для страниц с Bootstrap --- */
+body:has(.container-fluid) {
+  margin: 0;
+}
+
+.card {
+  border: 1px solid var(--bs-border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+  background-color: var(--bs-tertiary-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.product-row + .product-row {
+  margin-top: 0.75rem;
+}
+
+/* --- Стили для страниц index.html и received.html --- */
+.pallet {
+  background-color: var(--bs-secondary-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: 1.5em;
+  margin-bottom: 1.5em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.pallet h3 {
+  margin-top: 0;
+  color: var(--bs-primary-text-emphasis);
+}
+
+.pallet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1em;
+  margin-bottom: 1rem;
+}
+
+.pallet-info p {
+  margin: 4px 0;
+}
+
+.pallet table {
+  margin-top: 1em;
+  background-color: var(--bs-tertiary-bg);
+  border-radius: 0.375rem;
+}
+
+.pallet th,
+.pallet td {
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.pallet thead th {
+  border-bottom-width: 2px;
+}

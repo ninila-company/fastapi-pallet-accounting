@@ -1,0 +1,87 @@
+/* Стили, применяемые только при печати документа */
+
+@page {
+  size: A4 landscape;
+  margin: 0.7in;
+}
+
+body {
+  font-family: sans-serif;
+  font-size: 10pt;
+  line-height: 1.4;
+  background-color: #fff !important;
+  color: #000 !important;
+}
+
+/* Центрируем основной контейнер на листе */
+/* Этот селектор больше не нужен, центрируем саму таблицу */
+
+.print-header {
+  border-bottom: 2px solid #000;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.print-header p,
+p,
+strong {
+  color: #000 !important;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+table {
+  width: 98%; /* Уменьшаем ширину, чтобы были видны отступы */
+  border-collapse: collapse !important;
+  color: #000 !important;
+  margin-top: 0.5rem;
+  margin-left: auto; /* Центрируем таблицу */
+  margin-right: auto; /* Центрируем таблицу */
+  table-layout: fixed; /* Важно для соблюдения ширины колонок */
+}
+
+th,
+td {
+  border: 1px solid #666 !important;
+  padding: 4px 6px !important;
+  color: #000 !important;
+  text-align: left;
+}
+
+thead th {
+  font-weight: bold;
+}
+
+/* Задаем ширину колонок */
+.col-number {
+  width: 10%;
+}
+
+.col-date {
+  width: 12%;
+}
+
+.col-contents {
+  width: 56%; /* 100% - 10% - 12% - 12% - 10% */
+  word-wrap: break-word; /* Перенос длинных слов, если они не помещаются */
+}
+
+.col-quantity {
+  width: 10%;
+}
+
+/* Выравнивание для ячеек с количеством */
+.cell-quantity {
+  text-align: right;
+  vertical-align: top;
+}
+
+.cell-contents {
+  vertical-align: top;
+}

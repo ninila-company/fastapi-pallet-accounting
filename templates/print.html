@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Печать паллет</title>
+</head>
+
+<body>
+    <div id="print-container">
+        <div class="print-header">
+            <h1>Сводный отчет по паллетам</h1>
+            <p>Дата печати: <span id="print-date">{{ now().strftime('%d.%m.%Y') }}</span></p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-number">Паллета №</th>
+                    <th class="col-date">Дата поступления</th>
+                    <th class="col-date">Дата получения</th>
+                    <th class="col-contents">Состав паллеты</th>
+                    <th class="col-quantity">Количество</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pallet in pallets %}
+                <tr>
+                    <td>{{ pallet.number }}</td>
+                    <td>{{ pallet.pallets_from_the_date.strftime('%d.%m.%Y') }}</td>
+                    <td>{{ pallet.pallet_pick_up_date.strftime('%d.%m.%Y') if pallet.pallet_pick_up_date else 'На складе' }}
+                    </td>
+                    <td class="cell-contents">
+                        {% if pallet.products %}
+                        {% for product_on_pallet in pallet.products %}
+                        {{ product_on_pallet.product.product_name }}{% if not loop.last %}<br>{% endif %}
+                        {% endfor %}
+                        {% else %}
+                        <span style="font-style: italic;">(пустая паллета)</span>
+                        {% endif %}
+                    </td>
+                    <td class="cell-quantity">
+                        {% if pallet.products %}
+                        {% for product_on_pallet in pallet.products %}
+                        {{ product_on_pallet.quantity }}{% if not loop.last %}<br>{% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>
