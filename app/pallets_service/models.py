@@ -30,7 +30,7 @@ class Product(ProductBase):
     id: int = Field(..., description="Уникальный идентификатор продукта")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # --- Модели для Паллет ---
@@ -47,7 +47,7 @@ class ProductOnPallet(BaseModel):
     product_name: str = Field(..., description="Наименование товара")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Базовая модель, соответствующая Palet из Django
@@ -74,7 +74,7 @@ class Pallet(PalletBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class PalletUpdate(BaseModel):
