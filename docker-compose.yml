@@ -22,7 +22,8 @@ services:
     ports:
       - "80:80" # Публикуем HTTP порт
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Монтируем всю папку с конфигами. Nginx автоматически подхватит default.conf
+      - ./nginx:/etc/nginx/conf.d:ro
     depends_on:
       - app
     networks:

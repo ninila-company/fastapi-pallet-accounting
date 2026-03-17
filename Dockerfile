@@ -26,6 +26,9 @@ WORKDIR /app
 # Копируем системные библиотеки для WeasyPrint из этапа сборки
 COPY --from=builder /usr/lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/
 
+# Копируем исполняемые файлы, установленные через pip (включая uvicorn)
+COPY --from=builder /usr/local/bin /usr/local/bin
+
 # Копируем установленные Python-пакеты из этапа сборки
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
 
