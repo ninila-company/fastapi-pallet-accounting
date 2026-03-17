@@ -113,8 +113,9 @@ async def download_pallets_pdf(request: Request, id: List[int] = Query(...)):
         "now": datetime.utcnow,
     })
 
-    # Загружаем CSS для печати
-    css = CSS(string=open("static/print.css", "r").read())
+    # Загружаем CSS для печати, используя 'with' для гарантии закрытия файла
+    with open("static/print.css", "r") as f:
+        css = CSS(string=f.read())
 
     # Генерируем PDF
     pdf_bytes = HTML(string=html_string).write_pdf(stylesheets=[css])

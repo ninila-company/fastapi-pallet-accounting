@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Column, Date, ForeignKey, Integer, String, text
+from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -22,20 +22,21 @@ Base = declarative_base()
 class Product(Base):
     __tablename__ = "products"
 
-    id = Column[int](Integer, primary_key=True, index=True)
-    product_name = Column[str](String, unique=True, index=True, nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
+    product_name = Column(String, unique=True, index=True, nullable=False)
 
     # Связь для удобного доступа, но не является колонкой в таблице products
-    pallets = relationship("ProductOnPallet", back_populates="product")
+    pallets = relationship("ProductOnPallet", back_populates="product", cascade="all, delete-orphan")
 
 
 class Pallet(Base):
     __tablename__ = "pallets"
 
-    id = Column[int](Integer, primary_key=True, index=True)
-    number = Column[int](Integer, nullable=False)
-    pallets_from_the_date = Column[date](Date, nullable=False)
-    pallet_pick_up_date = Column[date](Date, nullable=True)
+    id = Column(Integer, primary_key=True, index=True)
+    number = Column(Integer, nullable=False)
+    pallets_from_the_date = Column(Date, nullable=False)
+    pallet_pick_up_date = Column(Date, nullable=True)
+    is_ordered = Column(Boolean, default=False, nullable=False)  # True если заказана
 
     products = relationship("ProductOnPallet", back_populates="pallet")
 
@@ -43,9 +44,9 @@ class Pallet(Base):
 class ProductOnPallet(Base):
     __tablename__ = "products_on_pallets"
 
-    pallet_id = Column[int](Integer, ForeignKey("pallets.id"), primary_key=True)
-    product_id = Column[int](Integer, ForeignKey("products.id"), primary_key=True)
-    quantity = Column[int](Integer, nullable=False)
+    pallet_id = Column(Integer, ForeignKey("pallets.id"), primary_key=True)
+    product_id = Column(Integer, ForeignKey("products.id"), primary_key=True)
+    quantity = Column(Integer, nullable=False)
 
     pallet = relationship("Pallet", back_populates="products")
     product = relationship("Product", back_populates="pallets")

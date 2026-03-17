@@ -57,6 +57,9 @@ class PalletBase(BaseModel):
     number: int = Field(..., description="Номер палеты")
     pallets_from_the_date: date = Field(..., description="Дата поступления")
     pallet_pick_up_date: Optional[date] = Field(None, description="Дата получения")
+    is_ordered: bool = Field(
+        False, description="True, если паллета заказана, но еще не на складе"
+    )
 
 
 class PalletCreate(PalletBase):
@@ -83,6 +86,7 @@ class PalletUpdate(BaseModel):
     number: Optional[int] = None
     pallets_from_the_date: Optional[date] = None
     pallet_pick_up_date: Optional[date] = None
+    is_ordered: Optional[bool] = None
     # Обратите внимание: products здесь для полного замещения списка,
     # а не для добавления одного продукта.
     products: Optional[List[ProductOnPallet]] = None

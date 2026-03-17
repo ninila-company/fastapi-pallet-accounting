@@ -124,6 +124,7 @@ async def create_pallet_from_admin(
     number: int = Form(...),
     pallets_from_the_date: date = Form(...),
     pallet_pick_up_date: Optional[date] = Form(None),
+    is_ordered: bool = Form(False),
     product_id: Optional[List[int]] = Form(None),
     quantity: Optional[List[int]] = Form(None),
     db: AsyncSession = Depends(get_db),
@@ -144,6 +145,7 @@ async def create_pallet_from_admin(
         number=number,
         pallets_from_the_date=pallets_from_the_date,
         pallet_pick_up_date=pallet_pick_up_date,
+        is_ordered=is_ordered,
     )
     new_pallet = await crud.create_pallet(db=db, pallet_in=pallet_in)
 
@@ -333,6 +335,7 @@ async def update_pallet_dates(
     pallet_id: int,
     pallets_from_the_date: date = Form(...),
     pallet_pick_up_date: Optional[date] = Form(None),
+    is_ordered: bool = Form(False),
     db: AsyncSession = Depends(get_db),
 ):
     """Обновляет дату поступления и/или дату получения паллеты.
@@ -343,6 +346,7 @@ async def update_pallet_dates(
     pallet_update = models.PalletUpdate(
         pallets_from_the_date=pallets_from_the_date,
         pallet_pick_up_date=pallet_pick_up_date,
+        is_ordered=is_ordered,
     )
     updated_pallet = await crud.partial_update_pallet(
         db=db, pallet_id=pallet_id, pallet_in=pallet_update
