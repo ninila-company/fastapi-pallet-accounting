@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import delete, select, text
+from sqlalchemy import delete, select, text, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -105,11 +105,62 @@ async def delete_product(db: AsyncSession, product_id: int) -> bool:
 # --- CRUD для Паллет ---
 
 
-async def get_all_pallets(db: AsyncSession) -> List[database.Pallet]:
-    """Возвращает список всех паллет."""
-    stmt = select(database.Pallet).options(
-        joinedload(database.Pallet.products).joinedload(
-            database.ProductOnPallet.product
+async def get_all_pallets(
+    db: AsyncSession, skip: int = 0, limit: int = 10
+) -> tuple[List[database.Pallet], int]:
+    """Возвращает список всех паллет с пагинацией и общее количество."""
+    # Сначала получаем общее количество паллет для пагинации
+    count_stmt = select(func.count()).select_from(database.Pallet)
+    total_count_result = await db.execute(count_stmt)
+    total_pallets = total_count_result.scalar_one()
+
+    # Затем получаем паллеты для текущей страницы
+    stmt = (
+        select(database.Pallet)
+        .options(
+            joinedload(database.Pallet.products).joinedload(
+                database.ProductOnPallet.product
+            )
+        )
+        .order_by(database.Pallet.id.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    pallets = list(result.unique().scalars().all())
+    return pallets, total_pallets
+
+
+async def get_pallets_in_stock(db: AsyncSession) -> List[database.Pallet]:
+    """Возвращает паллеты, которые на складе (не заказаны и не получены)."""
+    stmt = (
+        select(database.Pallet)
+        .where(
+            database.Pallet.is_ordered.is_(False),
+            database.Pallet.pallet_pick_up_date.is_(None),
+        )
+        .options(
+            joinedload(database.Pallet.products).joinedload(
+                database.ProductOnPallet.product
+            )
+        )
+    )
+    result = await db.execute(stmt)
+    return list(result.unique().scalars().all())
+
+
+async def get_pallets_in_transit(db: AsyncSession) -> List[database.Pallet]:
+    """Возвращает паллеты, которые в пути (заказаны, но еще не получены)."""
+    stmt = (
+        select(database.Pallet)
+        .where(
+            database.Pallet.is_ordered.is_(True),
+            database.Pallet.pallet_pick_up_date.is_(None),
+        )
+        .options(
+            joinedload(database.Pallet.products).joinedload(
+                database.ProductOnPallet.product
+            )
         )
     )
     result = await db.execute(stmt)
@@ -265,6 +316,29 @@ async def create_pallet(
     await db.refresh(new_pallet)
     await sync_pallet_fts(db, new_pallet.id)
     return new_pallet
+
+
+async def delete_pallet(db: AsyncSession, pallet_id: int) -> bool:
+    """Удаляет паллету и связанные с ней записи."""
+    pallet = await get_pallet_by_id(db, pallet_id)
+    if not pallet:
+        return False
+
+    # 1. Удаляем из FTS-индекса
+    await db.execute(
+        text(f"DELETE FROM {PALLET_FTS_TABLE} WHERE pallet_id = :pid"),
+        {"pid": pallet_id},
+    )
+
+    # 2. Удаляем записи из связующей таблицы (SQLAlchemy cascade должен это делать, но для явности)
+    await db.execute(
+        delete(database.ProductOnPallet).where(database.ProductOnPallet.pallet_id == pallet_id)
+    )
+
+    # 3. Удаляем саму паллету
+    await db.delete(pallet)
+    await db.commit()
+    return True
 
 
 async def add_product_to_pallet(

@@ -58,17 +58,44 @@ app.include_router(admin.router)
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, q: str = ""):
-    """Главная страница: паллеты на складе, с опциональным поиском по продуктам (FTS5)."""
+    """Главная страница: паллеты на складе, в пути, с опциональным поиском по продуктам."""
     db = request.state.db
     query = (q or "").strip()
+
+    pallets_in_stock = []
+    pallets_in_transit = []
     if query:
-        pallets = await crud.search_pallets_by_products(db=db, query=query)
-        pallets = [p for p in pallets if p.pallet_pick_up_date is None]
+        # При поиске ищем по всем и затем фильтруем
+        all_found = await crud.search_pallets_by_products(db=db, query=query)
+        pallets_in_stock = [
+            p
+            for p in all_found
+            if not p.is_ordered and p.pallet_pick_up_date is None
+        ]
+        pallets_in_transit = [
+            p
+            for p in all_found
+            if p.is_ordered and p.pallet_pick_up_date is None
+        ]
     else:
-        pallets = await crud.get_active_pallets(db=db)
+        # Без поиска просто получаем раздельные списки
+        pallets_in_stock = await crud.get_pallets_in_stock(db=db)
+        pallets_in_transit = await crud.get_pallets_in_transit(db=db)
+
+    # Получаем количество для всех вкладок
+    received_pallets = await crud.get_received_pallets(db=db)
+
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "pallets": pallets, "search_query": query},
+        {
+            "request": request,
+            "pallets_in_stock": pallets_in_stock,
+            "pallets_in_transit": pallets_in_transit,
+            "in_stock_count": len(pallets_in_stock),
+            "in_transit_count": len(pallets_in_transit),
+            "received_count": len(received_pallets),
+            "search_query": query,
+        },
     )
 
 

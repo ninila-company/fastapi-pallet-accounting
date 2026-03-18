@@ -66,6 +66,31 @@ async def get_pallet_by_id(pallet_id: int, db: AsyncSession = Depends(get_db)):
     return pallet
 
 
+
+@router.post(
+    "/{pallet_id}/order",
+    response_model=models.Pallet,
+    summary="Пометить паллету как 'Заказана'",
+)
+async def order_pallet(
+    pallet_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Устанавливает флаг is_ordered = True для паллеты.
+    """
+    pallet_update = models.PalletUpdate(is_ordered=True)
+    updated_pallet = await crud.partial_update_pallet(
+        db=db, pallet_id=pallet_id, pallet_in=pallet_update
+    )
+    if not updated_pallet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Паллета с ID {pallet_id} не найдена для обновления.",
+        )
+    return updated_pallet
+
+
 @router.patch(
     "/{pallet_id}",
     response_model=models.Pallet,

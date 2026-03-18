@@ -1,0 +1,64 @@
+{% if not pallets %}
+<div class="text-center text-body-secondary py-5">
+    <h3 class="h4">Паллеты не найдены</h3>
+    <p>Здесь пока нет паллет.</p>
+</div>
+{% else %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+    {% for pallet in pallets %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="card-title mb-0">Паллета №{{ pallet.number }}</h5>
+                    <small class="text-body-secondary">Поступление:
+                        {{ pallet.pallets_from_the_date.strftime('%d.%m.%Y') }}</small>
+                </div>
+                <input type="checkbox" name="id" value="{{ pallet.id }}" form="print-form-{{ tab_id }}"
+                    class="form-check-input pallet-checkbox" style="width: 1.5em; height: 1.5em;">
+            </div>
+            <div class="card-body">
+                {% if pallet.products %}
+                <ul class="list-group list-group-flush">
+                    {% for product_on_pallet in pallet.products %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        {{ product_on_pallet.product.product_name }}
+                        <span class="badge bg-primary rounded-pill">{{ product_on_pallet.quantity }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-body-secondary fst-italic">(пустая паллета)</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                {% if tab_id == 'in-stock' %}
+                <div class="text-end d-flex justify-content-end gap-2">
+                    <a href="#" class="btn btn-sm btn-outline-info yougile-send-btn" data-pallet-id="{{ pallet.id }}"
+                        data-pallet-number="{{ pallet.number }}">
+                        Отправить в Yougile
+                    </a>
+                    <a href="/admin/pallets/{{ pallet.id }}/edit" class="btn btn-sm btn-outline-primary">
+                        Редактировать
+                    </a>
+                </div>
+                {% elif tab_id == 'in-transit' %}
+                <div class="d-flex justify-content-end align-items-center gap-2">
+                    <form action="/admin/pallets/{{ pallet.id }}/update-date" method="post"
+                        class="d-flex gap-2 align-items-center">
+                        <input type="hidden" name="is_ordered" value="true">
+                        <input type="hidden" name="pallets_from_the_date" value="{{ pallet.pallets_from_the_date }}">
+                        <input type="date" name="pallet_pick_up_date" class="form-control form-control-sm" required>
+                        <button type="submit" class="btn btn-sm btn-success">Принять</button>
+                    </form>
+                    <a href="/admin/pallets/{{ pallet.id }}/edit" class="btn btn-sm btn-outline-primary">
+                        Редактировать
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

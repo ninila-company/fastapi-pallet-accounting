@@ -12,94 +12,120 @@
 <body class="bg-body-tertiary">
     <main class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <h1 class="h2 mb-0">Паллеты на складе</h1>
+            <h1 class="h2 mb-0">Учет паллет</h1>
             <div class="d-flex gap-2 flex-wrap">
-                <a href="/received" class="btn btn-outline-secondary">Посмотреть полученные</a>
+                <div class="d-flex align-items-center gap-3" id="print-controls" style="display: none;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="select-all-checkbox">
+                        <label class="form-check-label" for="select-all-checkbox">Выбрать все</label>
+                    </div>
+                    <button type="submit" class="btn btn-success" id="print-selected-btn" disabled>🖨️ Печать</button>
+                </div>
                 <a href="/admin" class="btn btn-outline-secondary">Админ-панель</a>
             </div>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <form action="/" method="get" class="d-flex gap-2 flex-grow-1" style="max-width: 400px;">
-                <input type="search" name="q" class="form-control" placeholder="Поиск по составу..."
-                    value="{{ search_query }}">
-                <button type="submit" class="btn btn-primary">Найти</button>
-            </form>
-            <div class="d-flex align-items-center gap-3">
-                {% if pallets %}
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="select-all-checkbox">
-                    <label class="form-check-label" for="select-all-checkbox">Выбрать все</label>
-                </div>
-                {% endif %}
-                <form id="print-form" action="/download-pallets-pdf" method="get" target="_blank">
-                    <button type="submit" class="btn btn-success" id="print-selected-btn" disabled>🖨️ Печать</button>
+        <!-- Навигация по вкладкам -->
+        <ul class="nav nav-tabs" id="palletTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="in-stock-tab" data-bs-toggle="tab" data-bs-target="#in-stock"
+                    type="button" role="tab" aria-controls="in-stock" aria-selected="true">
+                    На складе <span class="badge bg-secondary">{{ pallets_in_stock | length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="in-transit-tab" data-bs-toggle="tab" data-bs-target="#in-transit"
+                    type="button" role="tab" aria-controls="in-transit" aria-selected="false">
+                    В пути <span class="badge bg-primary">{{ pallets_in_transit | length }}</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/received">
+                    Посмотреть полученные <span class="badge bg-success">{{ received_count }}</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- Контент вкладок -->
+        <div class="tab-content pt-4" id="palletTabsContent">
+            <!-- ВКЛАДКА "НА СКЛАДЕ" -->
+            <div class="tab-pane fade show active" id="in-stock" role="tabpanel" aria-labelledby="in-stock-tab">
+                <form id="print-form-in-stock" action="/download-pallets-pdf" method="get" target="_blank">
+                    {% with pallets=pallets_in_stock, tab_id='in-stock' %}
+                    {% include 'pallet_cards.html' %}
+                    {% endwith %}
+                </form>
+            </div>
+
+            <!-- ВКЛАДКА "В ПУТИ" -->
+            <div class="tab-pane fade" id="in-transit" role="tabpanel" aria-labelledby="in-transit-tab">
+                <form id="print-form-in-transit" action="/download-pallets-pdf" method="get" target="_blank">
+                    {% with pallets=pallets_in_transit, tab_id='in-transit' %}
+                    {% include 'pallet_cards.html' %}
+                    {% endwith %}
                 </form>
             </div>
         </div>
-
-        {% if not pallets %}
-        <div class="text-center text-body-secondary py-5">
-            <h3 class="h4">Паллеты не найдены</h3>
-            <p>На складе нет паллет, соответствующих вашему запросу.</p>
-            {% if search_query %}
-            <a href="/" class="btn btn-primary">Сбросить поиск</a>
-            {% endif %}
-        </div>
-        {% else %}
-        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-            {% for pallet in pallets %}
-            <div class="col">
-                <div class="card h-100">
-                    <div class="card-header d-flex justify-content-between align-items-start">
-                        <div>
-                            <h5 class="card-title mb-0">Паллета №{{ pallet.number }}</h5>
-                            <small class="text-body-secondary">Поступление:
-                                {{ pallet.pallets_from_the_date.strftime('%d.%m.%Y') }}</small>
-                        </div>
-                        <input type="checkbox" name="id" value="{{ pallet.id }}" form="print-form"
-                            class="form-check-input pallet-checkbox" style="width: 1.5em; height: 1.5em;">
-                    </div>
-                    <div class="card-body">
-                        {% if pallet.products %}
-                        <ul class="list-group list-group-flush">
-                            {% for product_on_pallet in pallet.products %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                {{ product_on_pallet.product.product_name }}
-                                <span class="badge bg-primary rounded-pill">{{ product_on_pallet.quantity }}</span>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        {% else %}
-                        <p class="text-body-secondary fst-italic">(пустая паллета)</p>
-                        {% endif %}
-                    </div>
-                    <div class="card-footer text-end d-flex justify-content-end gap-2">
-                        <a href="#" class="btn btn-sm btn-outline-info yougile-send-btn" data-pallet-id="{{ pallet.id }}" data-pallet-number="{{ pallet.number }}">
-                            Отправить в Yougile
-                        </a>
-                        <a href="/admin/pallets/{{ pallet.id }}/edit" class="btn btn-sm btn-outline-primary">
-                            Редактировать
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // --- Логика для кнопок "Отправить в YouGile" ---
+            document.querySelectorAll('.yougile-send-btn').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const palletId = this.dataset.palletId;
+                    const palletNumber = this.dataset.palletNumber;
+
+                    if (confirm(`Вы уверены, что хотите пометить паллет №${palletNumber} как "Заказан"?`)) {
+                        fetch(`/pallets/${palletId}/order`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    alert(`Паллет №${palletNumber} помечен как "Заказан" и перемещен во вкладку "В пути".`);
+                                    window.location.reload(); // Перезагружаем страницу для обновления списков
+                                } else {
+                                    response.json().then(data => {
+                                        alert(`Ошибка: ${data.detail || 'Не удалось обновить паллет.'}`);
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Fetch Error:', error);
+                                alert('Произошла ошибка при отправке запроса.');
+                            });
+                    }
+                });
+            });
+
+            // --- Логика для вкладок и печати ---
+            const printControls = document.getElementById('print-controls');
             const selectAllCheckbox = document.getElementById('select-all-checkbox');
-            const checkboxes = document.querySelectorAll('.pallet-checkbox');
             const printBtn = document.getElementById('print-selected-btn');
+            const tabs = document.querySelectorAll('#palletTabs button[data-bs-toggle="tab"]');
 
-            function togglePrintButton() {
-                const selectedCount = document.querySelectorAll('.pallet-checkbox:checked').length;
-                printBtn.disabled = selectedCount === 0;
+            function setupPrintingForTab(tabId) {
+                const currentTabPane = document.getElementById(tabId);
+                if (!currentTabPane) return;
 
-                if (selectAllCheckbox) {
+                const checkboxes = currentTabPane.querySelectorAll('.pallet-checkbox');
+                const hasPallets = checkboxes.length > 0;
+
+                printControls.style.display = hasPallets ? 'flex' : 'none';
+                if (!hasPallets) return;
+
+                const printForm = document.getElementById(`print-form-${tabId}`);
+                printBtn.setAttribute('form', `print-form-${tabId}`);
+
+                function togglePrintButton() {
+                    const selectedCount = currentTabPane.querySelectorAll('.pallet-checkbox:checked').length;
+                    printBtn.disabled = selectedCount === 0;
+
                     if (selectedCount === checkboxes.length && checkboxes.length > 0) {
                         selectAllCheckbox.checked = true;
                         selectAllCheckbox.indeterminate = false;
@@ -111,31 +137,44 @@
                         selectAllCheckbox.indeterminate = false;
                     }
                 }
-            }
 
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', togglePrintButton);
-            });
+                checkboxes.forEach(checkbox => {
+                    checkbox.removeEventListener('change', togglePrintButton); // Убираем старые обработчики
+                    checkbox.addEventListener('change', togglePrintButton);
+                });
 
-            if (selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function () {
+                selectAllCheckbox.removeEventListener('change', selectAllHandler); // Убираем старые обработчики
+                selectAllCheckbox.addEventListener('change', selectAllHandler);
+
+                function selectAllHandler() {
                     checkboxes.forEach(cb => cb.checked = this.checked);
                     togglePrintButton();
-                });
+                }
+
+                togglePrintButton();
             }
 
-            togglePrintButton(); // Initial check
-
-            // Yougile button placeholder
-            document.querySelectorAll('.yougile-send-btn').forEach(button => {
-                button.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    const palletId = this.dataset.palletId;
-                    const palletNumber = this.dataset.palletNumber;
-                    alert(`Placeholder: Отправить паллет №${palletNumber} (ID: ${palletId}) в Yougile.`);
-                    // Logic to send to Yougile will go here later
+            // Настройка при переключении вкладок
+            tabs.forEach(tabEl => {
+                tabEl.addEventListener('show.bs.tab', function (event) {
+                    const tabId = event.target.getAttribute('aria-controls');
+                    localStorage.setItem('activePalletTab', tabId);
+                    setupPrintingForTab(tabId);
                 });
             });
+
+            // Настройка при загрузке страницы
+            const activeTab = localStorage.getItem('activePalletTab');
+            const activeTabId = activeTab || 'in-stock';
+
+            const someTabTriggerEl = document.querySelector(`button[data-bs-target="#${activeTabId}"]`);
+            if (someTabTriggerEl) {
+                const tab = new bootstrap.Tab(someTabTriggerEl);
+                tab.show();
+                setupPrintingForTab(activeTabId);
+            } else {
+                setupPrintingForTab('in-stock'); // Fallback
+            }
         });
     </script>
 </body>

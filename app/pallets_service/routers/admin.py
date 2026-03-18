@@ -1,7 +1,8 @@
 from datetime import date
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from math import ceil
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,16 +27,23 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/", response_class=HTMLResponse, summary="Показать админ-панель")
 async def view_admin_panel(
     request: Request, error: str = "", db: AsyncSession = Depends(get_db)
+    , page: int = Query(1, ge=1, description="Номер страницы")
+    , per_page: int = Query(10, ge=1, le=100, description="Паллет на страницу")
 ) -> _TemplateResponse:
     """Отображает HTML-страницу админ-панели."""
-    all_pallets = await crud.get_all_pallets(db)
+    skip = (page - 1) * per_page
+    all_pallets, total_pallets = await crud.get_all_pallets(db, skip=skip, limit=per_page)
     all_products = await crud.get_all_products(db)
+    total_pages = ceil(total_pallets / per_page)
     return templates.TemplateResponse(
         "admin.html",
         {
             "request": request,
             "all_pallets": all_pallets,
             "all_products": all_products,
+            "current_page": page,
+            "per_page": per_page,
+            "total_pages": total_pages,
             "error": error,
         },
     )
@@ -105,6 +113,28 @@ async def delete_product(
     deleted = await crud.delete_product(db=db, product_id=product_id)
     if not deleted:
         error_message = f"Продукт с ID {product_id} не найден для удаления."
+        redirect_url = (
+            router.url_path_for("view_admin_panel") + f"?error={error_message}"
+        )
+        return RedirectResponse(
+            url=redirect_url,
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    return RedirectResponse(
+        url=router.url_path_for("view_admin_panel"),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.post("/pallets/{pallet_id}/delete", summary="Удалить паллету")
+async def delete_pallet(
+    pallet_id: int, db: AsyncSession = Depends(get_db)
+) -> RedirectResponse:
+    """Полностью удаляет паллету из системы."""
+    deleted = await crud.delete_pallet(db=db, pallet_id=pallet_id)
+    if not deleted:
+        error_message = f"Паллета с ID {pallet_id} не найдена для удаления."
         redirect_url = (
             router.url_path_for("view_admin_panel") + f"?error={error_message}"
         )
