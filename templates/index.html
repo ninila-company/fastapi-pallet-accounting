@@ -74,7 +74,10 @@
                         <p class="text-body-secondary fst-italic">(пустая паллета)</p>
                         {% endif %}
                     </div>
-                    <div class="card-footer text-end">
+                    <div class="card-footer text-end d-flex justify-content-end gap-2">
+                        <a href="#" class="btn btn-sm btn-outline-info yougile-send-btn" data-pallet-id="{{ pallet.id }}" data-pallet-number="{{ pallet.number }}">
+                            Отправить в Yougile
+                        </a>
                         <a href="/admin/pallets/{{ pallet.id }}/edit" class="btn btn-sm btn-outline-primary">
                             Редактировать
                         </a>
@@ -122,6 +125,17 @@
             }
 
             togglePrintButton(); // Initial check
+
+            // Yougile button placeholder
+            document.querySelectorAll('.yougile-send-btn').forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const palletId = this.dataset.palletId;
+                    const palletNumber = this.dataset.palletNumber;
+                    alert(`Placeholder: Отправить паллет №${palletNumber} (ID: ${palletId}) в Yougile.`);
+                    // Logic to send to Yougile will go here later
+                });
+            });
         });
     </script>
 </body>
