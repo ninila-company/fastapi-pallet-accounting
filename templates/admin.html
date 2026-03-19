@@ -173,17 +173,60 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header py-3">
-                        <h5 class="mb-0">Все паллеты в системе</h5>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <h5 class="mb-0">Все паллеты в системе</h5>
+                            <form id="status-filter-form" action="" method="get" class="d-flex align-items-center gap-3">
+                                <input type="hidden" name="page" value="1">
+                                <input type="hidden" name="per_page" value="{{ per_page }}">
+                                {% if sort_by %}<input type="hidden" name="sort_by" value="{{ sort_by }}">{% endif %}
+                                {% if sort_order %}<input type="hidden" name="sort_order" value="{{ sort_order }}">{% endif %}
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="radio" name="status_filter" id="status_all" value="all" {% if status_filter == 'all' or not status_filter %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="status_all">Все</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="radio" name="status_filter" id="status_in_stock" value="in_stock" {% if status_filter == 'in_stock' %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="status_in_stock">На складе</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="radio" name="status_filter" id="status_in_transit" value="in_transit" {% if status_filter == 'in_transit' %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="status_in_transit">В пути</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="radio" name="status_filter" id="status_received" value="received" {% if status_filter == 'received' %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="status_received">Получен</label>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover table-nowrap mb-0">
                                 <thead class="table-light">
+                                    {% set next_sort_order = 'asc' if sort_order == 'desc' else 'desc' %}
                                     <tr>
-                                        <th scope="col">Номер</th>
+                                        <th scope="col">
+                                            <a href="?page={{ current_page }}&per_page={{ per_page }}&sort_by=number&sort_order={{ next_sort_order if sort_by == 'number' else 'desc' }}"
+                                                class="text-decoration-none text-reset">
+                                                Номер
+                                                {% if sort_by == 'number' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                                            </a>
+                                        </th>
                                         <th scope="col">Статус</th>
-                                        <th scope="col">Дата поступления</th>
-                                        <th scope="col">Дата получения</th>
+                                        <th scope="col">
+                                            <a href="?page={{ current_page }}&per_page={{ per_page }}&sort_by=pallets_from_the_date&sort_order={{ next_sort_order if sort_by == 'pallets_from_the_date' else 'desc' }}"
+                                                class="text-decoration-none text-reset">
+                                                Дата поступления
+                                                {% if sort_by == 'pallets_from_the_date' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                                            </a>
+                                        </th>
+                                        <th scope="col">
+                                            <a href="?page={{ current_page }}&per_page={{ per_page }}&sort_by=pallet_pick_up_date&sort_order={{ next_sort_order if sort_by == 'pallet_pick_up_date' else 'desc' }}"
+                                                class="text-decoration-none text-reset">
+                                                Дата получения
+                                                {% if sort_by == 'pallet_pick_up_date' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                                            </a>
+                                        </th>
                                         <th scope="col" class="text-end">Действия</th>
                                     </tr>
                                 </thead>
@@ -201,11 +244,16 @@
                                             {% endif %}
                                         </td>
                                         <td>{{ pallet.pallets_from_the_date.strftime('%d.%m.%Y') }}</td>
-                                        <td>{{ pallet.pallet_pick_up_date.strftime('%d.%m.%Y') if pallet.pallet_pick_up_date else '-' }}</td>
+                                        <td>{{ pallet.pallet_pick_up_date.strftime('%d.%m.%Y') if pallet.pallet_pick_up_date else '-' }}
+                                        </td>
                                         <td class="text-end">
-                                            <a href="{{ url_for('edit_pallet', pallet_id=pallet.id) }}" class="btn btn-sm btn-outline-secondary">Редактировать</a>
-                                            <form action="{{ url_for('delete_pallet', pallet_id=pallet.id) }}" method="post" class="d-inline" onsubmit="return confirm('Вы уверены, что хотите удалить паллету №{{ pallet.number }}? Это действие необратимо.');">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                                            <a href="{{ url_for('edit_pallet', pallet_id=pallet.id) }}"
+                                                class="btn btn-sm btn-outline-secondary">Редактировать</a>
+                                            <form action="{{ url_for('delete_pallet', pallet_id=pallet.id) }}"
+                                                method="post" class="d-inline"
+                                                onsubmit="return confirm('Вы уверены, что хотите удалить паллету №{{ pallet.number }}? Это действие необратимо.');">
+                                                <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger">Удалить</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -218,13 +266,19 @@
                 <nav aria-label="Пагинация паллет">
                     <ul class="pagination justify-content-center mt-4">
                         <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
-                            <a class="page-link" href="?page={{ current_page - 1 }}&per_page={{ per_page }}" aria-label="Предыдущая">&laquo;</a>
+                            <a class="page-link"
+                                href="?page={{ current_page - 1 }}&per_page={{ per_page }}&sort_by={{ sort_by or '' }}&sort_order={{ sort_order }}"
+                                aria-label="Предыдущая">&laquo;</a>
                         </li>
                         {% for p in range(1, total_pages + 1) %}
-                        <li class="page-item {% if p == current_page %}active{% endif %}"><a class="page-link" href="?page={{ p }}&per_page={{ per_page }}">{{ p }}</a></li>
+                        <li class="page-item {% if p == current_page %}active{% endif %}"><a class="page-link"
+                                href="?page={{ p }}&per_page={{ per_page }}&sort_by={{ sort_by or '' }}&sort_order={{ sort_order }}">{{ p }}</a>
+                        </li>
                         {% endfor %}
                         <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
-                            <a class="page-link" href="?page={{ current_page + 1 }}&per_page={{ per_page }}" aria-label="Следующая">&raquo;</a>
+                            <a class="page-link"
+                                href="?page={{ current_page + 1 }}&per_page={{ per_page }}&sort_by={{ sort_by or '' }}&sort_order={{ sort_order }}"
+                                aria-label="Следующая">&raquo;</a>
                         </li>
                     </ul>
                 </nav>

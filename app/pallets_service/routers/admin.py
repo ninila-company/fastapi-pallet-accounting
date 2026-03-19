@@ -29,12 +29,22 @@ async def view_admin_panel(
     request: Request, error: str = "", db: AsyncSession = Depends(get_db)
     , page: int = Query(1, ge=1, description="Номер страницы")
     , per_page: int = Query(10, ge=1, le=100, description="Паллет на страницу")
+    , sort_by: Optional[str] = Query(None, description="Поле для сортировки")
+    , sort_order: str = Query("desc", description="Порядок сортировки (asc/desc)")
+    , status_filter: Optional[str] = Query("all", description="Фильтр по статусу")
 ) -> _TemplateResponse:
     """Отображает HTML-страницу админ-панели."""
     skip = (page - 1) * per_page
-    all_pallets, total_pallets = await crud.get_all_pallets(db, skip=skip, limit=per_page)
+    all_pallets, total_pallets = await crud.get_all_pallets(
+        db,
+        skip=skip,
+        limit=per_page,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        status_filter=status_filter,
+    )
     all_products = await crud.get_all_products(db)
-    total_pages = ceil(total_pallets / per_page)
+    total_pages = ceil(total_pallets / per_page) if per_page > 0 else 0
     return templates.TemplateResponse(
         "admin.html",
         {
@@ -45,6 +55,9 @@ async def view_admin_panel(
             "per_page": per_page,
             "total_pages": total_pages,
             "error": error,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
+            "status_filter": status_filter,
         },
     )
 

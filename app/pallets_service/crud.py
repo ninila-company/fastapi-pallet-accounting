@@ -106,26 +106,56 @@ async def delete_product(db: AsyncSession, product_id: int) -> bool:
 
 
 async def get_all_pallets(
-    db: AsyncSession, skip: int = 0, limit: int = 10
+    db: AsyncSession,
+    skip: int = 0,
+    limit: int = 10,
+    sort_by: Optional[str] = None,
+    sort_order: str = "desc",
+    status_filter: Optional[str] = None,
 ) -> tuple[List[database.Pallet], int]:
     """Возвращает список всех паллет с пагинацией и общее количество."""
-    # Сначала получаем общее количество паллет для пагинации
-    count_stmt = select(func.count()).select_from(database.Pallet)
+    # Базовый запрос для подсчета и выборки
+    base_stmt = select(database.Pallet)
+
+    # Затем получаем паллеты для текущей страницы с сортировкой
+    stmt = select(database.Pallet).options(
+        joinedload(database.Pallet.products).joinedload(
+            database.ProductOnPallet.product
+        )
+    )
+
+    # Применяем фильтр по статусу
+    if status_filter == "in_stock":
+        stmt = stmt.where(database.Pallet.is_ordered.is_(False), database.Pallet.pallet_pick_up_date.is_(None))
+        base_stmt = base_stmt.where(database.Pallet.is_ordered.is_(False), database.Pallet.pallet_pick_up_date.is_(None))
+    elif status_filter == "in_transit":
+        stmt = stmt.where(database.Pallet.is_ordered.is_(True), database.Pallet.pallet_pick_up_date.is_(None))
+        base_stmt = base_stmt.where(database.Pallet.is_ordered.is_(True), database.Pallet.pallet_pick_up_date.is_(None))
+    elif status_filter == "received":
+        stmt = stmt.where(database.Pallet.pallet_pick_up_date.is_not(None))
+        base_stmt = base_stmt.where(database.Pallet.pallet_pick_up_date.is_not(None))
+
+    # Сначала получаем общее количество отфильтрованных паллет для пагинации
+    count_stmt = select(func.count()).select_from(base_stmt.subquery())
     total_count_result = await db.execute(count_stmt)
     total_pallets = total_count_result.scalar_one()
 
-    # Затем получаем паллеты для текущей страницы
-    stmt = (
-        select(database.Pallet)
-        .options(
-            joinedload(database.Pallet.products).joinedload(
-                database.ProductOnPallet.product
-            )
-        )
-        .order_by(database.Pallet.id.desc())
-        .offset(skip)
-        .limit(limit)
-    )
+    # Применяем сортировку
+    sortable_fields = {
+        "number": database.Pallet.number,
+        "pallets_from_the_date": database.Pallet.pallets_from_the_date,
+        "pallet_pick_up_date": database.Pallet.pallet_pick_up_date,
+    }
+    if sort_by in sortable_fields:
+        column = sortable_fields[sort_by]
+        if sort_order == "asc":
+            stmt = stmt.order_by(column.asc())
+        else:
+            stmt = stmt.order_by(column.desc())
+    else:
+        stmt = stmt.order_by(database.Pallet.id.desc())
+
+    stmt = stmt.offset(skip).limit(limit)
     result = await db.execute(stmt)
     pallets = list(result.unique().scalars().all())
     return pallets, total_pallets
